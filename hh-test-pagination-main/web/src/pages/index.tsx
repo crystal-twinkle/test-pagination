@@ -3,6 +3,8 @@ import {Inter} from "next/font/google";
 import Table from "react-bootstrap/Table";
 import {Alert, Container} from "react-bootstrap";
 import {GetServerSideProps, GetServerSidePropsContext} from "next";
+import Paginate from '@/components/Paginate';
+import {useEffect, useState} from 'react';
 
 const inter = Inter({subsets: ["latin"]});
 
@@ -38,6 +40,28 @@ export const getServerSideProps = (async (ctx: GetServerSidePropsContext): Promi
 
 
 export default function Home({statusCode, users}: TGetServerSideProps) {
+
+  const itemsPerPage = 20;
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [countPosts, setCountPosts] = useState(1);
+
+  const indexLastPost = currentPage * itemsPerPage;
+  const indexFirstPost = indexLastPost - itemsPerPage;
+  const [posts, setPosts] = useState([]);
+
+  useEffect(() => {
+    const currentPosts = users.slice(indexFirstPost, indexLastPost);
+    setCountPosts(users.length);
+    setPosts(currentPosts);
+
+  }, [indexFirstPost, indexLastPost, users]);
+
+  const countTotalPages = Math.ceil(countPosts / itemsPerPage);
+  const handleCurrentPage = (currentPage: number) => {
+    setCurrentPage(currentPage);
+  }
+
   if (statusCode !== 200) {
     return <Alert variant={'danger'}>Ошибка {statusCode} при загрузке данных</Alert>
   }
@@ -68,7 +92,7 @@ export default function Home({statusCode, users}: TGetServerSideProps) {
             </thead>
             <tbody>
             {
-              users.map((user) => (
+              posts.map((user) => (
                 <tr key={user.id}>
                   <td>{user.id}</td>
                   <td>{user.firstname}</td>
@@ -82,7 +106,7 @@ export default function Home({statusCode, users}: TGetServerSideProps) {
             </tbody>
           </Table>
 
-          {/*TODO add pagination*/}
+          <Paginate countTotalPages={countTotalPages} currentPage={currentPage} handleCurrentPage={handleCurrentPage} />
 
         </Container>
       </main>
